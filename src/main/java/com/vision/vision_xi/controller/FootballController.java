@@ -1,5 +1,6 @@
 package com.vision.vision_xi.controller;
 
+import com.vision.vision_xi.dto.MatchesResponse;
 import com.vision.vision_xi.service.FootballService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,8 @@ public class FootballController {
         this.service = service;
     }
 
-    @GetMapping("matches")
-    public String getMatches() {
+    @GetMapping("/matches")
+    public MatchesResponse getMatches() {
         return service.getMatches();
     }
 }
