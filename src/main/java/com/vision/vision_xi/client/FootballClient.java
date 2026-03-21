@@ -20,6 +20,28 @@ public class FootballClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    public String getAllMatches() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", apiKey);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        String todaysMatchesUrl = baseUrl + "matches";
+
+        ResponseEntity<String> todaysMatchesResponse = restTemplate.exchange(
+                todaysMatchesUrl,
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
+
+        if (!todaysMatchesResponse.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to fetch all games");
+        }
+
+        return todaysMatchesResponse.getBody();
+    }
+
     public String getPremierLeagueMatches() {
 
         HttpHeaders headers = new HttpHeaders();
