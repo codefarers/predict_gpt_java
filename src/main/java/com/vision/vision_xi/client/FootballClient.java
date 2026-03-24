@@ -12,6 +12,7 @@ import java.util.Map;
 
 @Component
 public class FootballClient {
+
     @Value("${football.api.base-url}")
     private String baseUrl;
 
@@ -20,82 +21,74 @@ public class FootballClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    // ---------- PUBLIC METHODS ----------
+
     public String getAllMatches() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Auth-Token", apiKey);
-
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        String todaysMatchesUrl = baseUrl + "matches";
-
-        ResponseEntity<String> todaysMatchesResponse = restTemplate.exchange(
-                todaysMatchesUrl,
-                HttpMethod.GET,
-                entity,
-                String.class
-        );
-
-        if (!todaysMatchesResponse.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Failed to fetch all games");
-        }
-
-        return todaysMatchesResponse.getBody();
+        return getRequest(baseUrl + "matches", String.class);
     }
 
     public String getPremierLeagueMatches() {
+        return getMatchesByCompetition("PL");
+    }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Auth-Token", apiKey);
+    public String getLaLigaMatches() {
+        return getMatchesByCompetition("PD"); // correct La Liga code
+    }
 
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+    // ---------- CORE LOGIC ----------
 
-        String competitionUrl = baseUrl + "competitions/PL";
+    private String getMatchesByCompetition(String competitionCode) {
+        Map<String, Object> competition = getRequest(baseUrl + "competitions/" + competitionCode, Map.class);
 
-        ResponseEntity<Map> competitionResponse = restTemplate.exchange(
-                competitionUrl,
+        Integer matchday = extractMatchday(competition);
+
+        String url = baseUrl + "competitions/" + competitionCode +
+                "/matches?matchday=" + matchday;
+
+        return getRequest(url, String.class);
+    }
+
+    // ---------- HELPERS ----------
+
+    private <T> T getRequest(String url, Class<T> responseType) {
+        ResponseEntity<T> response = restTemplate.exchange(
+                url,
                 HttpMethod.GET,
-                entity,
-                Map.class
-
+                buildEntity(),
+                responseType
         );
 
-        if (!competitionResponse.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Failed to fetch competition data");
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Request failed: " + url);
         }
 
-        Map body = competitionResponse.getBody();
-        if(body == null) {
-            throw new RuntimeException("Competition response body is null");
+        return response.getBody();
+    }
+
+    private HttpEntity<String> buildEntity() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Auth-Token", apiKey);
+        return new HttpEntity<>(headers);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Integer extractMatchday(Map<String, Object> body) {
+        if (body == null) {
+            throw new RuntimeException("Response body is null");
         }
 
         Object seasonObj = body.get("currentSeason");
-        if(!(seasonObj instanceof Map)) {
-            throw new RuntimeException("Current season missing or invalid");
+        if (!(seasonObj instanceof Map)) {
+            throw new RuntimeException("Invalid currentSeason");
         }
 
-        Map currentSeason = (Map) seasonObj;
+        Map<String, Object> season = (Map<String, Object>) seasonObj;
 
-        Object matchdayObj = currentSeason.get("currentMatchday");
-        if(!(matchdayObj instanceof Integer)) {
-            throw new RuntimeException("current Matchday missing or invalid");
+        Object matchdayObj = season.get("currentMatchday");
+        if (!(matchdayObj instanceof Integer)) {
+            throw new RuntimeException("Invalid currentMatchday");
         }
 
-        Integer matchday = (Integer) matchdayObj;
-
-        String matchesUrl = baseUrl + "/competitions/PL/matches?matchday" + matchday;
-
-        ResponseEntity<String> matchesResponse = restTemplate.exchange(
-                matchesUrl,
-                HttpMethod.GET,
-                entity,
-                String.class
-        );
-
-        if(!matchesResponse.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Failed to fetch matches");
-        }
-
-        return matchesResponse.getBody();
-
+        return (Integer) matchdayObj;
     }
 }
