@@ -35,6 +35,14 @@ public class FootballClient {
         return getMatchesByCompetition("PD"); // correct La Liga code
     }
 
+    public String getLigueOneMatches () {
+        return getMatchesByCompetition("FL1");
+    }
+
+    public String getBundesligaMatches () {
+        return getMatchesByCompetition("BL1");
+    }
+
     // ---------- CORE LOGIC ----------
 
     private String getMatchesByCompetition(String competitionCode) {
