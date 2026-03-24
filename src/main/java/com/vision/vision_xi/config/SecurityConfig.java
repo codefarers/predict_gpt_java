@@ -23,7 +23,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/public/**",
                                 "/api/premierleague/**",
-                                "api/today-matches/**",
+                                "/api/today-matches/**",
+                                "/api/laliga/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
